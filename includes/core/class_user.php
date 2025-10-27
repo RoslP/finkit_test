@@ -48,4 +48,27 @@ class User {
         return $items;
     }
 
+    public static function users_list($d = [])
+    {
+        $offset = isset($d['offset']) && is_numeric($d['offset']) ? $d['offset'] : 0;
+        $limit = 20;
+        $items = [];
+        // where
+        $where = '';
+        $q = DB::query("SELECT user_id, plot_id, first_name, last_name, phone, email, last_login 
+            FROM users ".$where." ORDER BY user_id+0 LIMIT ".$offset.", ".$limit.";") or die (DB::error());
+        while ($row = DB::fetch_row($q)) {
+            $items[] = [
+                'plot_id' => (int) $row['plot_id'],
+                'user_id' => (int) $row['user_id'],
+                'first_name' => $row['first_name'],
+                'last_name' => $row['last_name'],
+                'phone' => $row['phone'],
+                'email' => $row['email'],
+                'last_login' => date('Y/m/d', $row['last_login']),
+            ];
+        }
+        return ['items' => $items];
+    }
+
 }
