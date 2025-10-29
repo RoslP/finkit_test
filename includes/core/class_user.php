@@ -50,11 +50,20 @@ class User {
 
     public static function users_list($d = [])
     {
+        $search = isset($d['search']) && trim($d['search']) ? $d['search'] : '';
         $offset = isset($d['offset']) && is_numeric($d['offset']) ? $d['offset'] : 0;
         $limit = 20;
         $items = [];
-        // where
         $where = '';
+
+        if ($search !== '') {
+            if (is_numeric($search)) {
+                $where .= "WHERE phone LIKE '%" . $search . "%'";
+            } else {
+                $where .= "WHERE first_name like '%" . $search . "%' OR email LIKE '%" . $search . "%'";
+            }
+        }
+
         $q = DB::query("SELECT user_id, plot_id, first_name, last_name, phone, email, last_login 
             FROM users ".$where." ORDER BY user_id+0 LIMIT ".$offset.", ".$limit.";") or die (DB::error());
         while ($row = DB::fetch_row($q)) {
@@ -68,7 +77,14 @@ class User {
                 'last_login' => date('Y/m/d', $row['last_login']),
             ];
         }
+
         return ['items' => $items];
     }
 
+    public static function users_fetch($d = [])
+    {
+        $items = User::users_list($d);
+        HTML::assign('users', $items['items']);
+        return ['html' => HTML::fetch('./partials/users_table.html'), 'paginator' => 0];
+    }
 }
