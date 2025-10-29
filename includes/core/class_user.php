@@ -27,6 +27,30 @@ class User {
         }
     }
 
+    private static function user_edit_info($id)
+    {
+        $q = DB::query("SELECT user_id, plot_id, first_name, last_name, phone, email FROM users WHERE user_id='" . $id . "';") or die (DB::error());
+        if ($row = DB::fetch_row($q)) {
+            return [
+                'user_id' => (int)$row['user_id'],
+                'plot_id' => (int)$row['plot_id'],
+                'first_name' => $row['first_name'],
+                'last_name' => $row['last_name'],
+                'phone' => $row['phone'],
+                'email' => $row['email'],
+            ];
+        } else {
+            return [
+                'user_id' => 0,
+                'plot_id' => 0,
+                'first_name' => '',
+                'last_name' => '',
+                'phone' => '',
+                'email' => '',
+            ];
+        }
+    }
+
     public static function users_list_plots($number) {
         // vars
         $items = [];
@@ -91,5 +115,49 @@ class User {
         $items = User::users_list($d);
         HTML::assign('users', $items['items']);
         return ['html' => HTML::fetch('./partials/users_table.html'), 'paginator' => $items['paginator']];
+    }
+
+    public static function user_edit_window($d)
+    {
+        $user_id = isset($d['user_id']) && is_numeric($d['user_id']) ? $d['user_id'] : 0;
+        HTML::assign('user', User::user_edit_info($user_id));
+        return ['html' => HTML::fetch('./partials/user_edit.html')];
+    }
+
+    public static function user_edit_update($d = [])
+    {
+        $user_id = isset($d['user_id']) && is_numeric($d['user_id']) ? $d['user_id'] : 0;
+        $first_name = isset($d['first_name']) && is_string($d['first_name']) ? $d['first_name'] : '';
+        $last_name = isset($d['last_name']) && is_string($d['last_name']) ? $d['last_name'] : '';
+        $phone = isset($d['phone']) && is_numeric($d['phone']) ? trim($d['phone']) : 0;
+        $email = isset($d['email']) && is_string($d['email']) ? trim($d['email']) : '';
+        $offset = isset($d['offset']) ? preg_replace('~\D+~', '', $d['offset']) : 0;
+
+        if($user_id){
+            $set = [];
+            $set[] = "first_name='".$first_name."'";
+            $set[] = "last_name='".$last_name."'";
+            $set[] = "phone='".$phone."'";
+            $set[] = "email='".$email."'";
+            $set[] = "updated='".Session::$ts."'";
+            $set = implode(", ", $set);
+            DB::query("UPDATE users SET ".$set." WHERE user_id='".$user_id."' LIMIT 1;") or die (DB::error());
+        }
+        else{
+            DB::query("INSERT INTO plots (
+                first_name,
+                last_name,
+                phone,
+                email,
+                updated
+            ) VALUES (
+                '".$first_name."',
+                '".$last_name."',
+                '".$phone."',
+                '".$email."',
+                '".Session::$ts."'
+            );") or die (DB::error());
+        }
+        return User::users_fetch(['offset' => $offset]);
     }
 }
