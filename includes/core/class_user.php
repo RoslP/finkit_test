@@ -27,6 +27,30 @@ class User {
         }
     }
 
+    private static function user_edit_info($id)
+    {
+        $q = DB::query("SELECT user_id, plot_id, first_name, last_name, phone, email FROM users WHERE user_id='" . $id . "';") or die (DB::error());
+        if ($row = DB::fetch_row($q)) {
+            return [
+                'user_id' => (int)$row['user_id'],
+                'plot_id' => $row['plot_id'],
+                'first_name' => $row['first_name'],
+                'last_name' => $row['last_name'],
+                'phone' => $row['phone'],
+                'email' => $row['email'],
+            ];
+        } else {
+            return [
+                'user_id' => 0,
+                'plot_id' => 0,
+                'first_name' => '',
+                'last_name' => '',
+                'phone' => '',
+                'email' => '',
+            ];
+        }
+    }
+
     public static function users_list_plots($number) {
         // vars
         $items = [];
@@ -48,4 +72,103 @@ class User {
         return $items;
     }
 
+    public static function users_list($d = [])
+    {
+        $search = isset($d['search']) && trim($d['search']) ? $d['search'] : '';
+        $offset = isset($d['offset']) && is_numeric($d['offset']) ? $d['offset'] : 0;
+        $limit = 20;
+        $items = [];
+        $where = '';
+
+        if ($search !== '') {
+            if (is_numeric($search)) {
+                $where .= "AND phone LIKE '%" . $search . "%'";
+            } else {
+                $where .= "AND (first_name like '%" . $search . "%' OR email LIKE '%" . $search . "%')";
+            }
+        }
+
+        $q = DB::query("SELECT user_id, plot_id, first_name, last_name, phone, email, last_login 
+            FROM users WHERE is_deleted <> 1 ".$where." ORDER BY user_id+0 LIMIT ".$offset.", ".$limit.";") or die (DB::error());
+        while ($row = DB::fetch_row($q)) {
+            $items[] = [
+                'plot_id' => $row['plot_id'],
+                'user_id' => (int) $row['user_id'],
+                'first_name' => $row['first_name'],
+                'last_name' => $row['last_name'],
+                'phone' => $row['phone'],
+                'email' => $row['email'],
+                'last_login' => date('Y/m/d', $row['last_login']),
+            ];
+        }
+        $q = DB::query("SELECT count(*) FROM users WHERE is_deleted <> 1 ".$where.";");
+        $count = ($row = DB::fetch_row($q)) ? $row['count(*)'] : 0;
+        $url = 'users?';
+        if ($search) $url .= '&search='.$search;
+        paginator($count, $offset, $limit, $url, $paginator);
+        // output
+        return ['items' => $items, 'paginator' => $paginator];
+    }
+
+    public static function users_fetch($d = [])
+    {
+        $items = User::users_list($d);
+        HTML::assign('users', $items['items']);
+        return ['html' => HTML::fetch('./partials/users_table.html'), 'paginator' => $items['paginator']];
+    }
+
+    public static function user_edit_window($d)
+    {
+        $user_id = isset($d['user_id']) && is_numeric($d['user_id']) ? $d['user_id'] : 0;
+        HTML::assign('user', User::user_edit_info($user_id));
+        return ['html' => HTML::fetch('./partials/user_edit.html')];
+    }
+
+    public static function user_edit_update($d = [])
+    {
+        $user_id = isset($d['user_id']) && is_numeric($d['user_id']) ? $d['user_id'] : 0;
+        $plot_id = isset($d['plot_id']) && is_string($d['plot_id']) ? $d['plot_id'] : 0;
+        $first_name = isset($d['first_name']) && is_string($d['first_name']) ? $d['first_name'] : '';
+        $last_name = isset($d['last_name']) && is_string($d['last_name']) ? $d['last_name'] : '';
+        $phone = isset($d['phone']) && is_numeric($d['phone']) ? trim($d['phone']) : 0;
+        $email = isset($d['email']) && is_string($d['email']) ? trim($d['email']) : '';
+        $offset = isset($d['offset']) ? preg_replace('~\D+~', '', $d['offset']) : 0;
+
+        if($user_id){
+            $set = [];
+            $set[] = $plot_id !== '' ? "plot_id='" . $plot_id . "'" : '';
+            $set[] = $first_name !== '' ? "first_name='" . $first_name . "'" : '';
+            $set[] = $last_name !== '' ? "last_name='" . $last_name . "'" : '';
+            $set[] = $phone !== 0 ? "phone='" . $phone . "'" : '';
+            $set[] = $email !== 0 ? "email='" . $email . "'" : '';
+            $set[] = "updated='".Session::$ts."'";
+            $set = array_filter($set, fn($value) => $value !== '');
+            $set = implode(", ", $set);
+            DB::query("UPDATE users SET ".$set." WHERE user_id='".$user_id."' LIMIT 1;") or die (DB::error());
+        }
+        else{
+            DB::query("INSERT INTO users (
+                first_name,
+                last_name,
+                phone,
+                email,
+                updated
+            ) VALUES (
+                '".$first_name."',
+                '".$last_name."',
+                '".$phone."',
+                '".$email."',
+                '".Session::$ts."'
+            );") or die (DB::error());
+        }
+        return User::users_fetch(['offset' => $offset]);
+    }
+    public static function safe_delete($userData)
+    {
+        $offset = isset($userData['offset']) ? preg_replace('~\D+~', '', $userData['offset']) : 0;
+        $userId = (int) $userData['user_id'];
+        $updated = $set[] = "updated='".Session::$ts."'";
+        DB::query("UPDATE users SET is_deleted=1, $updated WHERE user_id=".$userId." LIMIT 1;") or die (DB::error());
+        return User::users_fetch(['offset' => $offset]);
+    }
 }
