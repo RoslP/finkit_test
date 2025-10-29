@@ -204,6 +204,21 @@ let common = {
         }
     },
 
+    deleteUser(id) {
+        let data = {
+            user_id: id,
+            first_name: gv('first_name'),
+            last_name: gv('last_name'),
+            offset: global.offset
+        }
+        if (confirm("Are you sure you want to delete " + data["first_name"] + " " + data["last_name"] + " ?")) {
+            let location = {dpt: 'user', act: 'delete'};
+            request({location: location, data: data}, (result) => {
+                common.modal_hide();
+                html('table', result.html);
+            });
+        }
+    }
 }
 
 add_event(document, 'DOMContentLoaded', common.init);

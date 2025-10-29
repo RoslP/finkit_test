@@ -82,14 +82,14 @@ class User {
 
         if ($search !== '') {
             if (is_numeric($search)) {
-                $where .= "WHERE phone LIKE '%" . $search . "%'";
+                $where .= "AND phone LIKE '%" . $search . "%'";
             } else {
-                $where .= "WHERE first_name like '%" . $search . "%' OR email LIKE '%" . $search . "%'";
+                $where .= "AND (first_name like '%" . $search . "%' OR email LIKE '%" . $search . "%')";
             }
         }
 
         $q = DB::query("SELECT user_id, plot_id, first_name, last_name, phone, email, last_login 
-            FROM users ".$where." ORDER BY user_id+0 LIMIT ".$offset.", ".$limit.";") or die (DB::error());
+            FROM users WHERE is_deleted <> 1 ".$where." ORDER BY user_id+0 LIMIT ".$offset.", ".$limit.";") or die (DB::error());
         while ($row = DB::fetch_row($q)) {
             $items[] = [
                 'plot_id' => (int) $row['plot_id'],
@@ -101,7 +101,7 @@ class User {
                 'last_login' => date('Y/m/d', $row['last_login']),
             ];
         }
-        $q = DB::query("SELECT count(*) FROM users ".$where.";");
+        $q = DB::query("SELECT count(*) FROM users WHERE is_deleted <> 1 ".$where.";");
         $count = ($row = DB::fetch_row($q)) ? $row['count(*)'] : 0;
         $url = 'users?';
         if ($search) $url .= '&search='.$search;
@@ -145,7 +145,7 @@ class User {
             DB::query("UPDATE users SET ".$set." WHERE user_id='".$user_id."' LIMIT 1;") or die (DB::error());
         }
         else{
-            DB::query("INSERT INTO plots (
+            DB::query("INSERT INTO users (
                 first_name,
                 last_name,
                 phone,
@@ -159,6 +159,14 @@ class User {
                 '".Session::$ts."'
             );") or die (DB::error());
         }
+        return User::users_fetch(['offset' => $offset]);
+    }
+    public static function safe_delete($userData)
+    {
+        $offset = isset($userData['offset']) ? preg_replace('~\D+~', '', $userData['offset']) : 0;
+        $userId = (int) $userData['user_id'];
+        $updated = $set[] = "updated='".Session::$ts."'";
+        DB::query("UPDATE users SET is_deleted=1, $updated WHERE user_id=".$userId." LIMIT 1;") or die (DB::error());
         return User::users_fetch(['offset' => $offset]);
     }
 }

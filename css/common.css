@@ -252,3 +252,7 @@ table .gray {color: #777;}
 #login_note.fade {opacity: 0;}
 
 .login_controls > div {margin-top: 25px;}
+
+.delete_user{background-color: red; margin-top: 15px;display: flex; align-items: center; font-size: 18px; padding: 0 35px 0 35px; color: white; border: none;
+height: 35px; border-radius: 8px; transition: all 0.35s ease-out;}
+.delete_user:hover {background-color: rgba(255, 75, 55, 0.77);}
