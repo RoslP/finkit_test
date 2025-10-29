@@ -184,7 +184,7 @@ let common = {
         };
         for (let key in data){
             if (data[key] === '' || data[key] === 0) {
-                if(key !== 'offset'){
+                if (key !== 'offset' && key !== 'user_id') {
                     alert('Write all fields')
                     return;
                 }
