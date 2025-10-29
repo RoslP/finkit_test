@@ -190,12 +190,18 @@ let common = {
                 }
             }
         }
+        inputPhoneAndEmailFilter(data)
         let location = {dpt: 'user', act: 'edit_update'};
         // call
         request({location: location, data: data}, (result) => {
             common.modal_hide();
             html('table', result.html);
         });
+
+        function inputPhoneAndEmailFilter(data) {
+            data.phone = data.phone.replace(/\D/g, '')
+            data.email = data.email.toLowerCase()
+        }
     },
 
 }

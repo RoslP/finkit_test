@@ -135,11 +135,12 @@ class User {
 
         if($user_id){
             $set = [];
-            $set[] = "first_name='".$first_name."'";
-            $set[] = "last_name='".$last_name."'";
-            $set[] = "phone='".$phone."'";
-            $set[] = "email='".$email."'";
+            $set[] = $first_name !== '' ? "first_name='" . $first_name . "'" : '';
+            $set[] = $last_name !== '' ? "last_name='" . $last_name . "'" : '';
+            $set[] = $phone !== 0 ? "phone='" . $phone . "'" : '';
+            $set[] = $email !== 0 ? "email='" . $email . "'" : '';
             $set[] = "updated='".Session::$ts."'";
+            $set = array_filter($set, fn($value) => $value !== '');
             $set = implode(", ", $set);
             DB::query("UPDATE users SET ".$set." WHERE user_id='".$user_id."' LIMIT 1;") or die (DB::error());
         }
