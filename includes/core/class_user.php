@@ -33,7 +33,7 @@ class User {
         if ($row = DB::fetch_row($q)) {
             return [
                 'user_id' => (int)$row['user_id'],
-                'plot_id' => (int)$row['plot_id'],
+                'plot_id' => $row['plot_id'],
                 'first_name' => $row['first_name'],
                 'last_name' => $row['last_name'],
                 'phone' => $row['phone'],
@@ -92,7 +92,7 @@ class User {
             FROM users WHERE is_deleted <> 1 ".$where." ORDER BY user_id+0 LIMIT ".$offset.", ".$limit.";") or die (DB::error());
         while ($row = DB::fetch_row($q)) {
             $items[] = [
-                'plot_id' => (int) $row['plot_id'],
+                'plot_id' => $row['plot_id'],
                 'user_id' => (int) $row['user_id'],
                 'first_name' => $row['first_name'],
                 'last_name' => $row['last_name'],
@@ -127,6 +127,7 @@ class User {
     public static function user_edit_update($d = [])
     {
         $user_id = isset($d['user_id']) && is_numeric($d['user_id']) ? $d['user_id'] : 0;
+        $plot_id = isset($d['plot_id']) && is_string($d['plot_id']) ? $d['plot_id'] : 0;
         $first_name = isset($d['first_name']) && is_string($d['first_name']) ? $d['first_name'] : '';
         $last_name = isset($d['last_name']) && is_string($d['last_name']) ? $d['last_name'] : '';
         $phone = isset($d['phone']) && is_numeric($d['phone']) ? trim($d['phone']) : 0;
@@ -135,6 +136,7 @@ class User {
 
         if($user_id){
             $set = [];
+            $set[] = $plot_id !== '' ? "plot_id='" . $plot_id . "'" : '';
             $set[] = $first_name !== '' ? "first_name='" . $first_name . "'" : '';
             $set[] = $last_name !== '' ? "last_name='" . $last_name . "'" : '';
             $set[] = $phone !== 0 ? "phone='" . $phone . "'" : '';

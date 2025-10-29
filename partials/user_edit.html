@@ -2,12 +2,10 @@
     <i class="icon_close" onclick="common.modal_hide()"></i>
 </div>
 <div class="modal_body">
-<!--    <div class="input_group_modal">-->
-<!--        <div>Status</div>-->
-<!--        <select id="status">-->
-<!--            <option value="0"{if $plot.status_id == 0} selected{/if}>Free</option>-->
-<!--        </select>-->
-<!--    </div>-->
+    <div class="input_group_modal">
+        <div>Plots</div>
+        <input type="text" id="plot_id" value="{$user.plot_id}">
+    </div>
     <div class="input_group_modal">
         <div>First name</div>
         <input type="text" id="first_name" value="{$user.first_name}">
